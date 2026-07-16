@@ -11,7 +11,7 @@
           <el-container>
             <el-form :model="form" label-width="80px" label-position="left" style="width: 100%">
               <el-alert
-                  title="默认转换走你的甲骨文自建后端，本站不保存输入；短链接和配置上传仍是独立的第三方功能。"
+                  title="默认转换走 SubLink 私有增强后端，本站不保存输入；短链接和配置上传仍是独立的第三方功能。"
                   type="info"
                   :closable="false"
                   show-icon
@@ -424,7 +424,7 @@ export default {
           "sub.cm": "https://sub.cm/short",
         },
         customBackend: {
-          "我的甲骨文自建后端【VLESS Reality+Hysteria+AnyTLS】": defaultBackend,
+          "SubLink 私有增强后端【VLESS Reality+Hysteria+AnyTLS】": defaultBackend,
           "肥羊增强型后端【vless reality+hy1+hy2】": "https://url.v1.mk",
           "肥羊备用后端【vless reality+hy1+hy2】": "https://sub.d1.mk",
           "つつ-多地防失联【负载均衡+国内优化】": "https://api.tsutsu.one",
@@ -1312,7 +1312,7 @@ export default {
             this.backendVersion = res.data ? String(res.data).trim() + " · " : "";
             const backend = this.form.customBackend;
             if (backend.indexOf("weekeebu.top/subconverter") !== -1) {
-              this.$message.success(`${this.backendVersion}甲骨文自建隐私后端，支持 VLESS Reality、Hysteria 和 AnyTLS`);
+              this.$message.success(`${this.backendVersion}SubLink 私有增强后端，支持 VLESS Reality、Hysteria 和 AnyTLS`);
             } else if (backend.indexOf("url.v1.mk") !== -1 || backend.indexOf("sub.d1.mk") !== -1) {
               this.$message.success("订阅转换负载均衡增强版后端，已屏蔽免费节点池（会返回403），额外支持vless reality+hysteria+hysteria2订阅转换");
             } else if (backend.indexOf("127.0.0.1") !== -1) {

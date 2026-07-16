@@ -16,7 +16,7 @@
 
 ## 数据流
 
-本站是静态页面，没有在 GitHub Pages 上运行服务器。默认转换后端为部署在个人 Oracle Cloud 主机上的 `https://weekeebu.top/subconverter`，订阅转换不会再经过公共 Subconverter。
+本站是静态页面，没有在 GitHub Pages 上运行服务器。默认转换后端为私有部署的 `SubLink 私有增强后端`，订阅转换不会再经过公共 Subconverter。
 
 “生成短链接”和“自定义配置”仍分别使用 `.env` 中配置的短链与配置托管服务，页面已明确标记为第三方功能；敏感订阅只使用“生成订阅链接”即可。
 
