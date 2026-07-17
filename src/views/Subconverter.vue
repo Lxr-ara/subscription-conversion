@@ -11,7 +11,7 @@
           <el-container>
             <el-form :model="form" label-width="80px" label-position="left" style="width: 100%">
               <el-alert
-                  title="默认转换走 SubLink 私有增强后端，本站不保存输入；短链接和配置上传仍是独立的第三方功能。"
+                  title="默认后端直接生成 SubLink 私有短链；短链只含随机令牌，原始订阅由私有后端加密保存。配置上传仍是独立的第三方功能。"
                   type="info"
                   :closable="false"
                   show-icon
@@ -40,17 +40,6 @@
                     style="width: 100%"
                 >
                   <el-option v-for="(v, k) in options.customBackend" :key="k" :label="k" :value="v"></el-option>
-                </el-select>
-              </el-form-item>
-              <el-form-item label="短链选择:">
-                <el-select
-                    v-model="form.shortType"
-                    allow-create
-                    filterable
-                    placeholder="可输入其他可用短链API"
-                    style="width: 100%"
-                >
-                  <el-option v-for="(v, k) in options.shortTypes" :key="k" :label="k" :value="v"></el-option>
                 </el-select>
               </el-form-item>
               <el-form-item label="远程配置:">
@@ -192,24 +181,11 @@
                   <i id="yejian" class="el-icon-moon"></i>
                 </el-button>
               </el-divider>
-              <el-form-item label="定制订阅:">
+              <el-form-item label="私有订阅:">
                 <el-input class="copy-content" disabled v-model="customSubUrl">
                   <el-button
                       slot="append"
                       v-clipboard:copy="customSubUrl"
-                      v-clipboard:success="onCopy"
-                      ref="copy-btn"
-                      icon="el-icon-document-copy"
-                  >复制
-                  </el-button>
-                </el-input>
-              </el-form-item>
-              <el-form-item label="订阅短链:">
-                <el-input class="copy-content" v-model="customShortSubUrl"
-                          placeholder="输入自定义短链接后缀，点击生成短链接可反复生成">
-                  <el-button
-                      slot="append"
-                      v-clipboard:copy="customShortSubUrl"
                       v-clipboard:success="onCopy"
                       ref="copy-btn"
                       icon="el-icon-document-copy"
@@ -222,16 +198,9 @@
                     style="width: 150px"
                     type="danger"
                     @click="makeUrl"
-                    :disabled="form.sourceSubUrl.length === 0 || btnBoolean"
-                >生成订阅链接
-                </el-button>
-                <el-button
-                    style="width: 150px"
-                    type="danger"
-                    @click="makeShortUrl"
                     :loading="loading1"
-                    :disabled="customSubUrl.length === 0"
-                >生成短链接（第三方）
+                    :disabled="form.sourceSubUrl.length === 0 || btnBoolean"
+                >生成私有订阅短链
                 </el-button>
               </el-form-item>
               <el-form-item label-width="0px" style="text-align: center">
@@ -384,7 +353,6 @@ const remoteConfigSample = process.env.VUE_APP_SUBCONVERTER_REMOTE_CONFIG
 const scriptConfigSample = process.env.VUE_APP_SCRIPT_CONFIG
 const filterConfigSample = process.env.VUE_APP_FILTER_CONFIG
 const defaultBackend = process.env.VUE_APP_SUBCONVERTER_DEFAULT_BACKEND
-const shortUrlBackend = process.env.VUE_APP_MYURLS_DEFAULT_BACKEND + '/short'
 const configUploadBackend = process.env.VUE_APP_CONFIG_UPLOAD_BACKEND + '/sub.php'
 export default {
   data() {
@@ -415,13 +383,6 @@ export default {
           "Shadowsocks Android(SIP008)": "sssub",
           ShadowsocksD: "ssd",
           "自动判断客户端": "auto",
-        },
-        shortTypes: {
-          "v1.mk": "https://v1.mk/short",
-          "d1.mk": "https://d1.mk/short",
-          "dlj.tf": "https://dlj.tf/short",
-          "suo.yt": "https://suo.yt/short",
-          "sub.cm": "https://sub.cm/short",
         },
         customBackend: {
           "SubLink 私有增强后端【VLESS Reality+Hysteria+AnyTLS】": defaultBackend,
@@ -842,7 +803,6 @@ export default {
         sourceSubUrl: "",
         clientType: "",
         customBackend: this.getUrlParam() == "" ? defaultBackend : this.getUrlParam(),
-        shortType: "https://v1.mk/short",
         remoteConfig: "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/config/ACL4SSR_Online_Full_NoAuto.ini",
         excludeRemarks: "",
         includeRemarks: "",
@@ -880,7 +840,6 @@ export default {
       loading2: false,
       loading3: false,
       customSubUrl: "",
-      customShortSubUrl: "",
       dialogUploadConfigVisible: false,
       loadConfig: "",
       dialogLoadConfigVisible: false,
@@ -970,61 +929,60 @@ export default {
         this.$message.error("订阅链接与客户端为必填项");
         return false;
       }
-      let backend =
+      const backend =
           this.form.customBackend === ""
               ? defaultBackend
               : this.form.customBackend;
       let sourceSub = this.form.sourceSubUrl;
       sourceSub = sourceSub.replace(/(\n|\r|\n\r)/g, "|");
-      this.customSubUrl =
-          backend +
-          "/sub?target=" +
+      let query =
+          "target=" +
           this.form.clientType +
           "&url=" +
           encodeURIComponent(sourceSub) +
           "&insert=" +
           this.form.insert;
       if (this.form.remoteConfig !== "") {
-        this.customSubUrl +=
+        query +=
             "&config=" + encodeURIComponent(this.form.remoteConfig);
       }
       if (this.form.excludeRemarks !== "") {
-        this.customSubUrl +=
+        query +=
             "&exclude=" + encodeURIComponent(this.form.excludeRemarks);
       }
       if (this.form.includeRemarks !== "") {
-        this.customSubUrl +=
+        query +=
             "&include=" + encodeURIComponent(this.form.includeRemarks);
       }
       if (this.form.filename !== "") {
-        this.customSubUrl +=
+        query +=
             "&filename=" + encodeURIComponent(this.form.filename);
       }
       if (this.form.rename !== "") {
-        this.customSubUrl +=
+        query +=
             "&rename=" + encodeURIComponent(this.form.rename);
       }
       if (this.form.interval !== "") {
-        this.customSubUrl +=
+        query +=
             "&interval=" + encodeURIComponent(this.form.interval * 86400);
       }
       if (this.form.devid !== "") {
-        this.customSubUrl +=
+        query +=
             "&dev_id=" + encodeURIComponent(this.form.devid);
       }
       if (this.form.appendType) {
-        this.customSubUrl +=
+        query +=
             "&append_type=" + this.form.appendType.toString();
       }
       if (this.form.tls13) {
-        this.customSubUrl +=
+        query +=
             "&tls13=" + this.form.tls13.toString();
       }
       if (this.form.sort) {
-        this.customSubUrl +=
+        query +=
             "&sort=" + this.form.sort.toString();
       }
-      this.customSubUrl +=
+      query +=
           "&emoji=" +
           this.form.emoji.toString() +
           "&list=" +
@@ -1043,51 +1001,50 @@ export default {
           this.form.fdn.toString();
       if (this.form.clientType.includes("surge")) {
         if (this.form.tpl.surge.doh === true) {
-          this.customSubUrl += "&surge.doh=true";
+          query += "&surge.doh=true";
         }
       }
       if (this.form.clientType === "clash") {
         if (this.form.tpl.clash.doh === true) {
-          this.customSubUrl += "&clash.doh=true";
+          query += "&clash.doh=true";
         }
-        this.customSubUrl += "&new_name=" + this.form.new_name.toString();
+        query += "&new_name=" + this.form.new_name.toString();
       }
       if (this.form.clientType === "singbox") {
         if (this.form.tpl.singbox.ipv6 === true) {
-          this.customSubUrl += "&singbox.ipv6=1";
+          query += "&singbox.ipv6=1";
         }
       }
-      this.$copyText(this.customSubUrl);
-      this.$message.success("定制订阅已复制到剪贴板");
-    },
-    makeShortUrl() {
-      let duan =
-          this.form.shortType === ""
-              ? shortUrlBackend
-              : this.form.shortType;
-      this.loading1 = true;
-      let data = new FormData();
-      data.append("longUrl", btoa(this.customSubUrl));
-      if (this.customShortSubUrl.trim() != "") {
-        data.append("shortKey", this.customShortSubUrl.trim().indexOf("http") < 0 ? this.customShortSubUrl.trim() : "");
+
+      const normalizedBackend = backend.replace(/\/+$/, "");
+      const privateBackend = defaultBackend.replace(/\/+$/, "");
+      if (normalizedBackend !== privateBackend) {
+        this.customSubUrl = normalizedBackend + "/sub?" + query;
+        this.$copyText(this.customSubUrl);
+        this.$message.success("第三方后端订阅链接已复制到剪贴板");
+        return;
       }
+
+      this.loading1 = true;
+      this.customSubUrl = "";
       this.$axios
-          .post(duan, data, {
-            header: {
-              "Content-Type": "application/form-data; charset=utf-8"
+          .post(privateBackend + "/v1/links", {query}, {
+            headers: {
+              "Content-Type": "application/json"
             }
           })
           .then(res => {
-            if (res.data.Code === 1 && res.data.ShortUrl !== "") {
-              this.customShortSubUrl = res.data.ShortUrl;
-              this.$copyText(res.data.ShortUrl);
-              this.$message.success("短链接已复制到剪贴板（IOS设备和Safari浏览器不支持自动复制API，需手动点击复制按钮）");
+            if (res.data.Code === 1 && res.data.URL !== "") {
+              this.customSubUrl = res.data.URL;
+              this.$copyText(res.data.URL);
+              this.$message.success("私有订阅短链已生成并复制；链接中不含原始订阅地址");
             } else {
-              this.$message.error("短链接获取失败：" + res.data.Message);
+              this.$message.error("私有订阅短链生成失败：" + res.data.Message);
             }
           })
-          .catch(() => {
-            this.$message.error("短链接获取失败");
+          .catch(error => {
+            const message = error.response && error.response.data && error.response.data.Message;
+            this.$message.error(message ? "私有订阅短链生成失败：" + message : "私有订阅短链生成失败");
           })
           .finally(() => {
             this.loading1 = false;
@@ -1311,7 +1268,7 @@ export default {
           .then(res => {
             this.backendVersion = res.data ? String(res.data).trim() + " · " : "";
             const backend = this.form.customBackend;
-            if (backend.indexOf("weekeebu.top/subconverter") !== -1) {
+            if (backend.replace(/\/+$/, "") === defaultBackend.replace(/\/+$/, "")) {
               this.$message.success(`${this.backendVersion}SubLink 私有增强后端，支持 VLESS Reality、Hysteria 和 AnyTLS`);
             } else if (backend.indexOf("url.v1.mk") !== -1 || backend.indexOf("sub.d1.mk") !== -1) {
               this.$message.success("订阅转换负载均衡增强版后端，已屏蔽免费节点池（会返回403），额外支持vless reality+hysteria+hysteria2订阅转换");

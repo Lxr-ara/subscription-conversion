@@ -11,16 +11,16 @@
 - 多种目标客户端格式
 - 可选远程规则配置与高级转换参数
 - 自定义 Subconverter 后端
-- 长链接解析、短链接生成、亮色/暗色主题
+- 长链接解析、私有订阅短链生成、亮色/暗色主题
 - 响应式页面，适配桌面端与移动端
 
 ## 数据流
 
-本站是静态页面，没有在 GitHub Pages 上运行服务器。默认转换后端为私有部署的 `SubLink 私有增强后端`，订阅转换不会再经过公共 Subconverter。
+本站是静态页面，没有在 GitHub Pages 上运行服务器。默认转换后端为私有部署的 `SubLink 私有增强后端`，订阅转换不会经过公共 Subconverter 或第三方短链服务。
 
-“生成短链接”和“自定义配置”仍分别使用 `.env` 中配置的短链与配置托管服务，页面已明确标记为第三方功能；敏感订阅只使用“生成订阅链接”即可。
+点击“生成私有订阅短链”后，页面把转换参数提交给私有网关。网关使用 AES-GCM 加密保存参数，令牌只保存 HMAC 哈希，并返回 `/s/<随机令牌>` 链接；短链本身不包含原始订阅地址。“自定义配置”仍是独立的第三方功能，页面已明确标记。
 
-自建 Subconverter 只监听服务器的 `127.0.0.1:25500`，通过 Caddy 的 `/subconverter/` 路径对外提供转换接口，容器日志已关闭。
+Subconverter 只监听服务器的 `127.0.0.1:25500`，私有网关监听 `127.0.0.1:25501` 并在访问令牌链接时调用它，容器日志已关闭。
 
 ## 本地开发
 
@@ -44,8 +44,7 @@ yarn build
 | 变量 | 用途 |
 | --- | --- |
 | `VUE_APP_PROJECT` | GitHub 仓库地址 |
-| `VUE_APP_SUBCONVERTER_DEFAULT_BACKEND` | 默认转换后端 |
-| `VUE_APP_MYURLS_DEFAULT_BACKEND` | 默认短链接后端 |
+| `VUE_APP_SUBCONVERTER_DEFAULT_BACKEND` | 默认私有网关地址 |
 | `VUE_APP_CONFIG_UPLOAD_BACKEND` | 自定义配置托管后端 |
 
 GitHub Pages 的仓库子路径配置位于 `vue.config.js` 的 `publicPath`。
